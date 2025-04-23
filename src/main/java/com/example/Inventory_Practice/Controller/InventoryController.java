@@ -26,4 +26,9 @@ public class InventoryController {
     public ResponseEntity<InventoryEntity> createItem(@RequestBody InventoryEntity newItem){
         return new ResponseEntity<>(inventoryService.createItem(newItem), HttpStatus.CREATED);
     }
+
+    @DeleteMapping("/{id}")
+   public Long deleteItem(@PathVariable Long id) {
+        return inventoryService.deleteItem(id);
+    }
 }

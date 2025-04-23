@@ -24,4 +24,9 @@ public class InventoryService {
     public InventoryEntity createItem(InventoryEntity newItem) {
         return inventoryRepository.save(newItem);
     }
+
+    public Long deleteItem(Long id) {
+        inventoryRepository.deleteById(id);
+        return id;
+    }
 }
