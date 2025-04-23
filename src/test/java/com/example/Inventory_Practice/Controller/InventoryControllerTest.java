@@ -14,10 +14,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import javax.swing.text.html.parser.Entity;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,7 +52,7 @@ public class InventoryControllerTest {
 
     @BeforeEach
     void setUp() {
-        savedInventoryItem = new InventoryEntity("lug nut",3,5.76,Instant.parse("2021-03-19T11:19:42.12Z"));
+        savedInventoryItem = new InventoryEntity("lug nut",3,5.76, LocalDate.of(2022,2,23));
         savedInventoryItem.setId(1L);
         Mockito.when(inventoryService.createItem(Mockito.any(InventoryEntity.class))).thenReturn(savedInventoryItem);
     }
@@ -56,7 +60,7 @@ public class InventoryControllerTest {
     @Test
     void shouldAcceptGetRequestToFetchInventoryItem() throws Exception {
 
-        newInventoryItem = new InventoryEntity("bolt",2,6.00, Instant.parse("2021-02-09T11:19:42.12Z"));
+        newInventoryItem = new InventoryEntity("bolt",2,6.00, LocalDate.of(2023,4,19));
 
         items.add(newInventoryItem);
         Mockito.when(inventoryService.fetchItems()).thenReturn(items);
@@ -80,16 +84,18 @@ public class InventoryControllerTest {
                 .andExpect(jsonPath("$.item_description").value("lug nut"))
                 .andExpect(jsonPath("$.qty").value(3))
                 .andExpect(jsonPath("$.cost").value(5.76))
-                .andExpect(jsonPath("$.date_of_last_inventory").value("2021-03-19T11:19:42.120Z"));
+                .andExpect(jsonPath("$.date_of_last_inventory").value("2022-02-23"));
         Mockito.verify(inventoryService).createItem(any(InventoryEntity.class));
     }
 
     @Test
     void shouldAcceptPostRequestCreateItem() throws Exception {
-        InventoryEntity postItem = new InventoryEntity("the key to adam's heart",1,1000000000.0,Instant.parse("2021-02-09T11:19:42.12Z"));
+        InventoryEntity postItem = new InventoryEntity("lug nut",3,5.76, LocalDate.of(2022,2,23));
         postItem.setId(1L);
-        String postItemJson = new ObjectMapper().writeValueAsString(postItem);
-        String savedItemJson = new ObjectMapper().writeValueAsString(savedInventoryItem);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        String postItemJson = mapper.writeValueAsString(postItem);
+        String savedItemJson = mapper.writeValueAsString(savedInventoryItem);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/inventory")
                     .contentType(APPLICATION_JSON)
@@ -99,6 +105,16 @@ public class InventoryControllerTest {
         ArgumentCaptor<InventoryEntity> captor = ArgumentCaptor.forClass(InventoryEntity.class);
         Mockito.verify(inventoryService,times(1)).createItem(captor.capture());
         assertThat(captor.getValue()).usingRecursiveComparison().isEqualTo(postItem);
+    }
+
+    @Test
+    void shouldAcceptDeleteRequestToDeleteItem() throws Exception {
+        Mockito.when(inventoryService.deleteItem(1L)).thenReturn(1L);
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/inventory/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("1"));
+
+        Mockito.verify(inventoryService).deleteItem(1L);
     }
 
 }
