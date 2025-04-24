@@ -9,11 +9,10 @@ import java.util.List;
 
 @org.springframework.stereotype.Service
 public class InventoryService {
-    private final InventoryRepository repository;
-    private InventoryRepository inventoryRepository;
 
-    public InventoryService(InventoryRepository repository, InventoryRepository inventoryRepository){
-        this.repository = repository;
+    private final InventoryRepository inventoryRepository;
+
+    public InventoryService( InventoryRepository inventoryRepository){
         this.inventoryRepository = inventoryRepository;
     }
 
